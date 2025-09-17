@@ -51,7 +51,7 @@ exports.handler = async (event, context) => {
     }
     
     // Generate a unique reference for this payment
-    const externalReference = `JOB-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const externalReference = `MEAL-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
     // Define the callback URL - use Netlify function URL
     const callbackUrl = `${process.env.URL || process.env.DEPLOY_PRIME_URL || 'https://job-hub-kenya.netlify.app'}/.netlify/functions/payment-callback`;
