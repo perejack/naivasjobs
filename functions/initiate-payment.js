@@ -46,7 +46,7 @@ exports.handler = async (event, context) => {
     }
     
     // Generate a unique reference for this payment
-    const externalReference = `JOB-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const externalReference = `MEAL-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
     // Prepare PesaFlux payload
     const pesafluxPayload = {
