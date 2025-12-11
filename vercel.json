@@ -22,16 +22,5 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "env": {
-    "VITE_SUPABASE_URL": "@vite_supabase_url",
-    "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
-    "SUPABASE_SERVICE_KEY": "@supabase_service_key",
-    "MPESA_CONSUMER_KEY": "@mpesa_consumer_key",
-    "MPESA_CONSUMER_SECRET": "@mpesa_consumer_secret",
-    "MPESA_SHORTCODE": "@mpesa_shortcode",
-    "MPESA_PASSKEY": "@mpesa_passkey",
-    "MPESA_TILL_NUMBER": "@mpesa_till_number",
-    "MPESA_CALLBACK_URL": "@mpesa_callback_url"
-  }
+  ]
 }
