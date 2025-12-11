@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Loader2 } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Button, Input } from '../components/ui';
 import './AuthPages.css';
@@ -25,11 +25,33 @@ export const LoginPage = () => {
         setLoading(true);
         setError('');
 
+        // Set a timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+            setLoading(false);
+            setError('Connection timeout. Please try again.');
+        }, 15000);
+
         try {
             await signIn(formData.email, formData.password);
+            clearTimeout(timeoutId);
             navigate('/dashboard');
         } catch (err) {
-            setError(err.message || 'Invalid email or password');
+            clearTimeout(timeoutId);
+            console.error('Login error:', err);
+
+            // Map common errors to user-friendly messages
+            let errorMessage = 'Invalid email or password';
+            if (err.message?.includes('Invalid login')) {
+                errorMessage = 'Invalid email or password';
+            } else if (err.message?.includes('Email not confirmed')) {
+                errorMessage = 'Please verify your email first';
+            } else if (err.message?.includes('fetch')) {
+                errorMessage = 'Network error. Please check your connection.';
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -87,7 +109,7 @@ export const LoginPage = () => {
                             type="submit"
                             fullWidth
                             loading={loading}
-                            icon={loading ? <Loader2 className="animate-spin" size={20} /> : null}
+                            disabled={loading}
                         >
                             {loading ? 'Signing in...' : 'Sign in'}
                         </Button>
