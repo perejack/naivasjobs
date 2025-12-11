@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, Plus, Trash2, Check, Eye, EyeOff, Shield } from 'lucide-react';
+import { Store, Plus, Trash2, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { Card, CardContent, Button, Input } from '../components/ui';
@@ -11,14 +11,9 @@ export const TillsPage = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [visibleFields, setVisibleFields] = useState({});
     const [formData, setFormData] = useState({
         name: '',
-        shortcode: '',
-        till_number: '',
-        passkey: '',
-        consumer_key: '',
-        consumer_secret: ''
+        till_number: ''
     });
 
     useEffect(() => {
@@ -47,9 +42,14 @@ export const TillsPage = () => {
     };
 
     const createTill = async () => {
-        if (!formData.name || !formData.shortcode || !formData.till_number ||
-            !formData.passkey || !formData.consumer_key || !formData.consumer_secret) {
-            alert('All fields are required');
+        if (!formData.name || !formData.till_number) {
+            alert('Please enter both name and till number');
+            return;
+        }
+
+        // Validate till number format
+        if (!/^\d{5,10}$/.test(formData.till_number)) {
+            alert('Till number should be 5-10 digits');
             return;
         }
 
@@ -60,11 +60,7 @@ export const TillsPage = () => {
                 .insert({
                     user_id: user.id,
                     name: formData.name,
-                    shortcode: formData.shortcode,
                     till_number: formData.till_number,
-                    passkey: formData.passkey,
-                    consumer_key: formData.consumer_key,
-                    consumer_secret: formData.consumer_secret,
                     is_default: tills.length === 0
                 })
                 .select()
@@ -74,14 +70,7 @@ export const TillsPage = () => {
 
             setTills([data, ...tills]);
             setShowModal(false);
-            setFormData({
-                name: '',
-                shortcode: '',
-                till_number: '',
-                passkey: '',
-                consumer_key: '',
-                consumer_secret: ''
-            });
+            setFormData({ name: '', till_number: '' });
         } catch (error) {
             console.error('Error creating till:', error);
             alert('Failed to create till');
@@ -126,22 +115,12 @@ export const TillsPage = () => {
         }
     };
 
-    const toggleVisibility = (tillId, field) => {
-        const key = `${tillId}-${field}`;
-        setVisibleFields(prev => ({ ...prev, [key]: !prev[key] }));
-    };
-
-    const maskValue = (value) => {
-        if (!value) return '';
-        return value.slice(0, 4) + '••••••••' + value.slice(-4);
-    };
-
     return (
         <div className="tills-page">
             <div className="page-header">
                 <div>
                     <h1>Till Numbers</h1>
-                    <p>Add your M-Pesa Till credentials to receive payments directly.</p>
+                    <p>Add your M-Pesa Till number to receive payments directly to your account.</p>
                 </div>
                 <Button icon={<Plus size={20} />} onClick={() => setShowModal(true)}>
                     Add Till
@@ -149,8 +128,11 @@ export const TillsPage = () => {
             </div>
 
             <div className="info-banner">
-                <Shield size={20} />
-                <p>Your credentials are stored securely and used only to process payments to your Till.</p>
+                <Store size={20} />
+                <div>
+                    <strong>How it works:</strong> Add your Till number below. When payments are made through your API key,
+                    the money goes directly to your Till. We handle all the M-Pesa integration for you!
+                </div>
             </div>
 
             <div className="tills-list">
@@ -171,12 +153,14 @@ export const TillsPage = () => {
                                         </div>
                                         <div>
                                             <h3>{till.name}</h3>
-                                            <span className="till-number">Till: {till.till_number}</span>
+                                            <span className="till-number">Till Number: <strong>{till.till_number}</strong></span>
                                         </div>
                                     </div>
                                     <div className="till-actions">
                                         {till.is_default ? (
-                                            <span className="default-badge">Default</span>
+                                            <span className="default-badge">
+                                                <Check size={14} /> Default
+                                            </span>
                                         ) : (
                                             <Button variant="ghost" size="sm" onClick={() => setDefaultTill(till.id)}>
                                                 Set Default
@@ -187,26 +171,6 @@ export const TillsPage = () => {
                                         </button>
                                     </div>
                                 </div>
-
-                                <div className="till-details">
-                                    <div className="detail-row">
-                                        <span className="label">Shortcode</span>
-                                        <span className="value">{till.shortcode}</span>
-                                    </div>
-                                    <div className="detail-row">
-                                        <span className="label">Consumer Key</span>
-                                        <div className="secret-value">
-                                            <code>
-                                                {visibleFields[`${till.id}-key`]
-                                                    ? till.consumer_key
-                                                    : maskValue(till.consumer_key)}
-                                            </code>
-                                            <button onClick={() => toggleVisibility(till.id, 'key')}>
-                                                {visibleFields[`${till.id}-key`] ? <EyeOff size={16} /> : <Eye size={16} />}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
                             </CardContent>
                         </Card>
                     ))
@@ -215,7 +179,7 @@ export const TillsPage = () => {
                         <CardContent className="empty-state">
                             <Store size={48} />
                             <h3>No Tills Added</h3>
-                            <p>Add your M-Pesa Till credentials to receive payments directly to your account.</p>
+                            <p>Add your M-Pesa Till number to start receiving payments directly to your account.</p>
                             <Button onClick={() => setShowModal(true)}>Add Your First Till</Button>
                         </CardContent>
                     </Card>
@@ -225,62 +189,29 @@ export const TillsPage = () => {
             {/* Add Till Modal */}
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                    <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
-                        <h2>Add M-Pesa Till</h2>
-                        <p>Enter your Daraja API credentials from the Safaricom Developer Portal.</p>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <h2>Add Till Number</h2>
+                        <p>Enter your M-Pesa Buy Goods Till number. Payments will go directly to this Till.</p>
 
                         <div className="modal-form">
                             <Input
                                 label="Till Name"
                                 name="name"
-                                placeholder="e.g., My Shop"
+                                placeholder="e.g., My Shop, Main Store"
                                 value={formData.name}
                                 onChange={handleChange}
                             />
 
-                            <div className="form-row">
-                                <Input
-                                    label="Business Shortcode"
-                                    name="shortcode"
-                                    placeholder="e.g., 3581047"
-                                    value={formData.shortcode}
-                                    onChange={handleChange}
-                                />
-                                <Input
-                                    label="Till Number"
-                                    name="till_number"
-                                    placeholder="e.g., 7136988"
-                                    value={formData.till_number}
-                                    onChange={handleChange}
-                                />
-                            </div>
-
                             <Input
-                                label="Passkey"
-                                name="passkey"
-                                type="password"
-                                placeholder="Your Daraja Passkey"
-                                value={formData.passkey}
+                                label="Till Number"
+                                name="till_number"
+                                placeholder="e.g., 7136988"
+                                value={formData.till_number}
                                 onChange={handleChange}
                             />
 
-                            <div className="form-row">
-                                <Input
-                                    label="Consumer Key"
-                                    name="consumer_key"
-                                    type="password"
-                                    placeholder="Consumer Key"
-                                    value={formData.consumer_key}
-                                    onChange={handleChange}
-                                />
-                                <Input
-                                    label="Consumer Secret"
-                                    name="consumer_secret"
-                                    type="password"
-                                    placeholder="Consumer Secret"
-                                    value={formData.consumer_secret}
-                                    onChange={handleChange}
-                                />
+                            <div className="form-note">
+                                <strong>Note:</strong> This should be your Buy Goods Till number from Safaricom.
                             </div>
                         </div>
 

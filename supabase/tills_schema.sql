@@ -1,16 +1,16 @@
--- User Tills Table - Add to existing schema
+-- Simplified User Tills Table
+-- Users only add their Till number, all API credentials are SwiftPay's
 -- Run this in Supabase SQL Editor
 
--- Tills table for user M-Pesa credentials
+-- Drop existing tills table if exists (careful in production!)
+DROP TABLE IF EXISTS public.tills;
+
+-- Simplified tills table - only name and till_number
 CREATE TABLE public.tills (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
-    shortcode TEXT NOT NULL,
     till_number TEXT NOT NULL,
-    passkey TEXT NOT NULL,
-    consumer_key TEXT NOT NULL,
-    consumer_secret TEXT NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     is_default BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -25,6 +25,3 @@ CREATE POLICY "Users can manage own tills" ON public.tills
 
 -- Index for faster lookups
 CREATE INDEX idx_tills_user_id ON public.tills(user_id);
-
--- Update api_keys to optionally link to a specific till
-ALTER TABLE public.api_keys ADD COLUMN till_id UUID REFERENCES public.tills(id);
