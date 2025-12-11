@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -7,13 +7,21 @@ import './AuthPages.css';
 
 export const LoginPage = () => {
     const navigate = useNavigate();
-    const { signIn } = useAuth();
+    const { signIn, user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         email: '',
         password: ''
     });
+
+    // Navigate when user is authenticated
+    useEffect(() => {
+        if (user && loading) {
+            console.log('✅ User authenticated, navigating to dashboard');
+            navigate('/dashboard');
+        }
+    }, [user, loading, navigate]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,24 +34,29 @@ export const LoginPage = () => {
         setError('');
 
         try {
-            await signIn(formData.email, formData.password);
-            navigate('/dashboard');
+            // Start login - don't wait for Promise, auth state change will handle navigation
+            signIn(formData.email, formData.password)
+                .then(() => {
+                    console.log('✅ SignIn Promise resolved');
+                })
+                .catch((err) => {
+                    console.error('❌ Login error:', err);
+
+                    let errorMessage = 'Invalid email or password';
+                    if (err.message?.includes('Invalid login')) {
+                        errorMessage = 'Invalid email or password';
+                    } else if (err.message?.includes('Email not confirmed')) {
+                        errorMessage = 'Please check your email and click the confirmation link first';
+                    } else if (err.message) {
+                        errorMessage = err.message;
+                    }
+
+                    setError(errorMessage);
+                    setLoading(false);
+                });
         } catch (err) {
-            console.error('Login error:', err);
-
-            // Map common errors to user-friendly messages
-            let errorMessage = 'Invalid email or password';
-            if (err.message?.includes('Invalid login')) {
-                errorMessage = 'Invalid email or password';
-            } else if (err.message?.includes('Email not confirmed')) {
-                errorMessage = 'Please check your email and click the confirmation link first';
-            } else if (err.message?.includes('fetch') || err.message?.includes('network')) {
-                errorMessage = 'Network error. Please check your connection.';
-            } else if (err.message) {
-                errorMessage = err.message;
-            }
-
-            setError(errorMessage);
+            console.error('❌ Login error:', err);
+            setError(err.message || 'Invalid email or password');
             setLoading(false);
         }
     };

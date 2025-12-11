@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, Plus, Trash2, Check, AlertCircle } from 'lucide-react';
+import { Store, Plus, Trash2, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { Card, CardContent, Button, Input } from '../components/ui';
@@ -24,23 +24,20 @@ export const TillsPage = () => {
     const fetchTills = async () => {
         setError('');
         try {
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Request timed out')), 10000)
-            );
-
-            const fetchPromise = supabase
+            const { data, error: fetchError } = await supabase
                 .from('tills')
                 .select('*')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
-            const { data, error: fetchError } = await Promise.race([fetchPromise, timeoutPromise]);
-
             if (fetchError) throw fetchError;
             setTills(data || []);
         } catch (err) {
             console.error('Error fetching tills:', err);
-            setError(err.message || 'Failed to load tills');
+            // Don't show error if table doesn't exist yet
+            if (!err.message?.includes('does not exist')) {
+                setError(err.message || 'Failed to load tills');
+            }
         } finally {
             setLoading(false);
         }
@@ -64,11 +61,6 @@ export const TillsPage = () => {
         setSaving(true);
         setError('');
 
-        const timeoutId = setTimeout(() => {
-            setSaving(false);
-            setError('Request timed out. Please try again.');
-        }, 10000);
-
         try {
             const { data, error: insertError } = await supabase
                 .from('tills')
@@ -81,15 +73,12 @@ export const TillsPage = () => {
                 .select()
                 .single();
 
-            clearTimeout(timeoutId);
-
             if (insertError) throw insertError;
 
             setTills([data, ...tills]);
             setShowModal(false);
             setFormData({ name: '', till_number: '' });
         } catch (err) {
-            clearTimeout(timeoutId);
             console.error('Error creating till:', err);
             setError(err.message || 'Failed to create till');
         } finally {
@@ -146,10 +135,17 @@ export const TillsPage = () => {
             </div>
 
             {error && (
-                <div className="error-banner">
-                    <AlertCircle size={20} />
+                <div className="error-banner" style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '16px 20px', background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px',
+                    marginBottom: '16px', color: '#ef4444'
+                }}>
                     <span>{error}</span>
-                    <button onClick={() => setError('')}>×</button>
+                    <button onClick={() => setError('')} style={{
+                        marginLeft: 'auto', background: 'none', border: 'none',
+                        color: '#ef4444', fontSize: '1.5rem', cursor: 'pointer'
+                    }}>×</button>
                 </div>
             )}
 
@@ -166,7 +162,7 @@ export const TillsPage = () => {
                     <Card>
                         <CardContent className="loading-state">
                             <div className="loading-spinner"></div>
-                            <p>Loading tills...</p>
+                            <p style={{ color: 'var(--text-muted)', marginTop: '16px' }}>Loading tills...</p>
                         </CardContent>
                     </Card>
                 ) : tills.length > 0 ? (
@@ -239,7 +235,7 @@ export const TillsPage = () => {
                                 disabled={saving}
                             />
 
-                            <div className="form-note">
+                            <div className="form-note" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                 <strong>Note:</strong> This should be your Buy Goods Till number from Safaricom.
                             </div>
                         </div>

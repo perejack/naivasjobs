@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Building2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -7,7 +7,7 @@ import './AuthPages.css';
 
 export const SignupPage = () => {
     const navigate = useNavigate();
-    const { signUp } = useAuth();
+    const { signUp, user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
@@ -16,6 +16,14 @@ export const SignupPage = () => {
         confirmPassword: '',
         businessName: ''
     });
+
+    // Navigate when user is authenticated
+    useEffect(() => {
+        if (user && loading) {
+            console.log('✅ User authenticated, navigating to dashboard');
+            navigate('/dashboard');
+        }
+    }, [user, loading, navigate]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -39,19 +47,19 @@ export const SignupPage = () => {
         setError('');
 
         try {
-            await signUp(formData.email, formData.password, formData.businessName);
-            navigate('/dashboard');
+            // Start signup - don't wait for Promise, auth state change will handle navigation
+            signUp(formData.email, formData.password, formData.businessName)
+                .then(() => {
+                    console.log('✅ SignUp Promise resolved');
+                })
+                .catch((err) => {
+                    console.error('❌ Signup error:', err);
+                    setError(err.message || 'Failed to create account');
+                    setLoading(false);
+                });
         } catch (err) {
-            console.error('Signup error:', err);
-
-            let errorMessage = 'Failed to create account';
-            if (err.message?.includes('already registered')) {
-                errorMessage = 'This email is already registered';
-            } else if (err.message) {
-                errorMessage = err.message;
-            }
-
-            setError(errorMessage);
+            console.error('❌ Signup error:', err);
+            setError(err.message || 'Failed to create account');
             setLoading(false);
         }
     };

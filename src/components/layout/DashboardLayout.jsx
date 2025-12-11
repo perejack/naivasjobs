@@ -27,17 +27,28 @@ const navItems = [
 export const DashboardLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, profile, signOut, loading } = useAuth();
+    const { user, profile, signOut } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [initialCheckDone, setInitialCheckDone] = useState(false);
 
     useEffect(() => {
-        if (!loading && !user) {
-            navigate('/login');
-        }
-    }, [user, loading, navigate]);
+        // Give it 1 second to check auth, then redirect if no user
+        const timer = setTimeout(() => {
+            setInitialCheckDone(true);
+            if (!user) {
+                navigate('/login');
+            }
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [user, navigate]);
 
     const handleSignOut = async () => {
-        await signOut();
+        try {
+            await signOut();
+        } catch (e) {
+            console.error('Signout error:', e);
+        }
         navigate('/');
     };
 
@@ -46,7 +57,8 @@ export const DashboardLayout = () => {
         return location.pathname.startsWith(path);
     };
 
-    if (loading) {
+    // Show loading only for first second while checking auth
+    if (!initialCheckDone && !user) {
         return (
             <div className="dashboard-loading">
                 <div className="loading-spinner"></div>
@@ -54,6 +66,7 @@ export const DashboardLayout = () => {
         );
     }
 
+    // If checked and no user, show nothing (will redirect)
     if (!user) return null;
 
     return (
