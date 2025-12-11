@@ -4,6 +4,7 @@ import {
     LayoutDashboard,
     CreditCard,
     Key,
+    Store,
     Webhook,
     FileText,
     LogOut,
@@ -18,6 +19,7 @@ const navItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Overview', exact: true },
     { path: '/dashboard/transactions', icon: CreditCard, label: 'Transactions' },
     { path: '/dashboard/api-keys', icon: Key, label: 'API Keys' },
+    { path: '/dashboard/tills', icon: Store, label: 'Till Numbers' },
     { path: '/dashboard/webhooks', icon: Webhook, label: 'Webhooks' },
     { path: '/docs', icon: FileText, label: 'Documentation' }
 ];

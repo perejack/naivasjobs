@@ -1,0 +1,238 @@
+.tills-page {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 16px;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.page-header p {
+    color: var(--text-secondary);
+}
+
+.info-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: var(--radius-md);
+    margin-bottom: 24px;
+    color: var(--primary-light);
+}
+
+.info-banner p {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.tills-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.loading-state {
+    display: flex;
+    justify-content: center;
+    padding: 60px;
+}
+
+.till-card {
+    transition: border-color 0.2s ease;
+}
+
+.till-card:hover {
+    border-color: var(--border-hover);
+}
+
+.till-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.till-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.till-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--primary);
+}
+
+.till-info h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.till-number {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-family: 'SF Mono', monospace;
+}
+
+.till-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.default-badge {
+    padding: 6px 12px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.delete-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.till-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-glass);
+    border-radius: var(--radius-md);
+}
+
+.detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.detail-row .label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-row .value {
+    font-family: 'SF Mono', monospace;
+    color: var(--text-secondary);
+}
+
+.secret-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.secret-value code {
+    font-family: 'SF Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.secret-value button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 4px;
+    cursor: pointer;
+}
+
+.secret-value button:hover {
+    color: var(--primary);
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state svg {
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    margin-bottom: 24px;
+    max-width: 400px;
+}
+
+/* Modal */
+.modal-lg {
+    max-width: 560px;
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 24px 0;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+    }
+
+    .till-details {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}

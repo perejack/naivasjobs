@@ -8,6 +8,7 @@ import {
   DashboardPage,
   TransactionsPage,
   ApiKeysPage,
+  TillsPage,
   DocsPage
 } from './pages';
 import './index.css';
@@ -28,6 +29,7 @@ function App() {
             <Route index element={<DashboardPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
             <Route path="api-keys" element={<ApiKeysPage />} />
+            <Route path="tills" element={<TillsPage />} />
             <Route path="webhooks" element={<div className="p-8"><h1>Webhooks - Coming Soon</h1></div>} />
           </Route>
         </Routes>
