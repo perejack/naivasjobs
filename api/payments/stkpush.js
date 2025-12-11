@@ -1,5 +1,5 @@
 // SwiftPay STK Push API Endpoint
-// Vercel Serverless Function
+// Uses user's own Till credentials if configured, otherwise falls back to master
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -8,15 +8,16 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY
 );
 
-const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY;
-const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET;
-const MPESA_SHORTCODE = process.env.MPESA_SHORTCODE;
-const MPESA_PASSKEY = process.env.MPESA_PASSKEY;
-const MPESA_TILL_NUMBER = process.env.MPESA_TILL_NUMBER;
-const MPESA_CALLBACK_URL = process.env.MPESA_CALLBACK_URL;
+// Master credentials (fallback)
+const MASTER_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY;
+const MASTER_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET;
+const MASTER_SHORTCODE = process.env.MPESA_SHORTCODE;
+const MASTER_PASSKEY = process.env.MPESA_PASSKEY;
+const MASTER_TILL_NUMBER = process.env.MPESA_TILL_NUMBER;
+const CALLBACK_BASE_URL = process.env.MPESA_CALLBACK_URL;
 
-async function getAccessToken() {
-    const auth = Buffer.from(`${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`).toString('base64');
+async function getAccessToken(consumerKey, consumerSecret) {
+    const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
 
     const response = await fetch('https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
         method: 'GET',
@@ -91,8 +92,38 @@ export default async function handler(req, res) {
             .update({ last_used_at: new Date().toISOString() })
             .eq('id', apiKeyData.id);
 
-        // Get M-Pesa access token
-        const accessToken = await getAccessToken();
+        // Get user's default till credentials
+        let credentials = {
+            consumerKey: MASTER_CONSUMER_KEY,
+            consumerSecret: MASTER_CONSUMER_SECRET,
+            shortcode: MASTER_SHORTCODE,
+            passkey: MASTER_PASSKEY,
+            tillNumber: MASTER_TILL_NUMBER,
+            usingUserTill: false
+        };
+
+        // Check if user has their own till configured
+        const { data: userTill } = await supabase
+            .from('tills')
+            .select('*')
+            .eq('user_id', apiKeyData.user_id)
+            .eq('is_default', true)
+            .eq('is_active', true)
+            .single();
+
+        if (userTill) {
+            credentials = {
+                consumerKey: userTill.consumer_key,
+                consumerSecret: userTill.consumer_secret,
+                shortcode: userTill.shortcode,
+                passkey: userTill.passkey,
+                tillNumber: userTill.till_number,
+                usingUserTill: true
+            };
+        }
+
+        // Get M-Pesa access token using the appropriate credentials
+        const accessToken = await getAccessToken(credentials.consumerKey, credentials.consumerSecret);
         if (!accessToken) {
             return res.status(500).json({ success: false, message: 'Failed to authenticate with M-Pesa' });
         }
@@ -100,7 +131,7 @@ export default async function handler(req, res) {
         // Generate transaction ID and timestamp
         const transactionId = generateTransactionId();
         const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14);
-        const password = Buffer.from(`${MPESA_SHORTCODE}${MPESA_PASSKEY}${timestamp}`).toString('base64');
+        const password = Buffer.from(`${credentials.shortcode}${credentials.passkey}${timestamp}`).toString('base64');
 
         // STK Push request
         const stkResponse = await fetch('https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
@@ -110,15 +141,15 @@ export default async function handler(req, res) {
                 'Authorization': `Bearer ${accessToken}`
             },
             body: JSON.stringify({
-                BusinessShortCode: MPESA_SHORTCODE,
+                BusinessShortCode: credentials.shortcode,
                 Password: password,
                 Timestamp: timestamp,
                 TransactionType: 'CustomerBuyGoodsOnline',
                 Amount: numAmount,
                 PartyA: cleanPhone,
-                PartyB: MPESA_TILL_NUMBER,
+                PartyB: credentials.tillNumber,
                 PhoneNumber: cleanPhone,
-                CallBackURL: `${MPESA_CALLBACK_URL}/api/payments/callback`,
+                CallBackURL: `${CALLBACK_BASE_URL}/api/payments/callback`,
                 AccountReference: reference || 'SwiftPay',
                 TransactionDesc: 'Payment via SwiftPay'
             })
@@ -146,12 +177,14 @@ export default async function handler(req, res) {
                 success: true,
                 transaction_id: transactionId,
                 checkout_request_id: stkData.CheckoutRequestID,
-                message: 'STK Push sent successfully'
+                message: 'STK Push sent successfully',
+                using_user_till: credentials.usingUserTill
             });
         } else {
             return res.status(400).json({
                 success: false,
-                message: stkData.errorMessage || stkData.ResponseDescription || 'STK Push failed'
+                message: stkData.errorMessage || stkData.ResponseDescription || 'STK Push failed',
+                error_code: stkData.errorCode
             });
         }
 
