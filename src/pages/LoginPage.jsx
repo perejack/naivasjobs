@@ -25,18 +25,10 @@ export const LoginPage = () => {
         setLoading(true);
         setError('');
 
-        // Set a timeout to prevent infinite loading
-        const timeoutId = setTimeout(() => {
-            setLoading(false);
-            setError('Connection timeout. Please try again.');
-        }, 15000);
-
         try {
             await signIn(formData.email, formData.password);
-            clearTimeout(timeoutId);
             navigate('/dashboard');
         } catch (err) {
-            clearTimeout(timeoutId);
             console.error('Login error:', err);
 
             // Map common errors to user-friendly messages
@@ -44,15 +36,14 @@ export const LoginPage = () => {
             if (err.message?.includes('Invalid login')) {
                 errorMessage = 'Invalid email or password';
             } else if (err.message?.includes('Email not confirmed')) {
-                errorMessage = 'Please verify your email first';
-            } else if (err.message?.includes('fetch')) {
+                errorMessage = 'Please check your email and click the confirmation link first';
+            } else if (err.message?.includes('fetch') || err.message?.includes('network')) {
                 errorMessage = 'Network error. Please check your connection.';
             } else if (err.message) {
                 errorMessage = err.message;
             }
 
             setError(errorMessage);
-        } finally {
             setLoading(false);
         }
     };
@@ -92,6 +83,7 @@ export const LoginPage = () => {
                             onChange={handleChange}
                             icon={<Mail size={20} />}
                             required
+                            disabled={loading}
                         />
 
                         <Input
@@ -103,6 +95,7 @@ export const LoginPage = () => {
                             onChange={handleChange}
                             icon={<Lock size={20} />}
                             required
+                            disabled={loading}
                         />
 
                         <Button
