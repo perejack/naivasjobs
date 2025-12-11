@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, Plus, Trash2, Check } from 'lucide-react';
+import { Store, Plus, Trash2, Check, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { Card, CardContent, Button, Input } from '../components/ui';
@@ -9,6 +9,7 @@ export const TillsPage = () => {
     const { user } = useAuth();
     const [tills, setTills] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
@@ -21,17 +22,25 @@ export const TillsPage = () => {
     }, [user]);
 
     const fetchTills = async () => {
+        setError('');
         try {
-            const { data, error } = await supabase
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Request timed out')), 10000)
+            );
+
+            const fetchPromise = supabase
                 .from('tills')
                 .select('*')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
-            if (error) throw error;
+            const { data, error: fetchError } = await Promise.race([fetchPromise, timeoutPromise]);
+
+            if (fetchError) throw fetchError;
             setTills(data || []);
-        } catch (error) {
-            console.error('Error fetching tills:', error);
+        } catch (err) {
+            console.error('Error fetching tills:', err);
+            setError(err.message || 'Failed to load tills');
         } finally {
             setLoading(false);
         }
@@ -47,15 +56,21 @@ export const TillsPage = () => {
             return;
         }
 
-        // Validate till number format
         if (!/^\d{5,10}$/.test(formData.till_number)) {
             alert('Till number should be 5-10 digits');
             return;
         }
 
         setSaving(true);
+        setError('');
+
+        const timeoutId = setTimeout(() => {
+            setSaving(false);
+            setError('Request timed out. Please try again.');
+        }, 10000);
+
         try {
-            const { data, error } = await supabase
+            const { data, error: insertError } = await supabase
                 .from('tills')
                 .insert({
                     user_id: user.id,
@@ -66,14 +81,17 @@ export const TillsPage = () => {
                 .select()
                 .single();
 
-            if (error) throw error;
+            clearTimeout(timeoutId);
+
+            if (insertError) throw insertError;
 
             setTills([data, ...tills]);
             setShowModal(false);
             setFormData({ name: '', till_number: '' });
-        } catch (error) {
-            console.error('Error creating till:', error);
-            alert('Failed to create till');
+        } catch (err) {
+            clearTimeout(timeoutId);
+            console.error('Error creating till:', err);
+            setError(err.message || 'Failed to create till');
         } finally {
             setSaving(false);
         }
@@ -83,35 +101,35 @@ export const TillsPage = () => {
         if (!confirm('Are you sure you want to delete this till?')) return;
 
         try {
-            const { error } = await supabase
+            const { error: deleteError } = await supabase
                 .from('tills')
                 .delete()
                 .eq('id', id);
 
-            if (error) throw error;
+            if (deleteError) throw deleteError;
             setTills(tills.filter(t => t.id !== id));
-        } catch (error) {
-            console.error('Error deleting till:', error);
+        } catch (err) {
+            console.error('Error deleting till:', err);
+            setError(err.message || 'Failed to delete till');
         }
     };
 
     const setDefaultTill = async (id) => {
         try {
-            // Remove default from all
             await supabase
                 .from('tills')
                 .update({ is_default: false })
                 .eq('user_id', user.id);
 
-            // Set new default
             await supabase
                 .from('tills')
                 .update({ is_default: true })
                 .eq('id', id);
 
             setTills(tills.map(t => ({ ...t, is_default: t.id === id })));
-        } catch (error) {
-            console.error('Error setting default:', error);
+        } catch (err) {
+            console.error('Error setting default:', err);
+            setError(err.message || 'Failed to set default');
         }
     };
 
@@ -127,6 +145,14 @@ export const TillsPage = () => {
                 </Button>
             </div>
 
+            {error && (
+                <div className="error-banner">
+                    <AlertCircle size={20} />
+                    <span>{error}</span>
+                    <button onClick={() => setError('')}>×</button>
+                </div>
+            )}
+
             <div className="info-banner">
                 <Store size={20} />
                 <div>
@@ -140,6 +166,7 @@ export const TillsPage = () => {
                     <Card>
                         <CardContent className="loading-state">
                             <div className="loading-spinner"></div>
+                            <p>Loading tills...</p>
                         </CardContent>
                     </Card>
                 ) : tills.length > 0 ? (
@@ -188,7 +215,7 @@ export const TillsPage = () => {
 
             {/* Add Till Modal */}
             {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                <div className="modal-overlay" onClick={() => !saving && setShowModal(false)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <h2>Add Till Number</h2>
                         <p>Enter your M-Pesa Buy Goods Till number. Payments will go directly to this Till.</p>
@@ -200,6 +227,7 @@ export const TillsPage = () => {
                                 placeholder="e.g., My Shop, Main Store"
                                 value={formData.name}
                                 onChange={handleChange}
+                                disabled={saving}
                             />
 
                             <Input
@@ -208,6 +236,7 @@ export const TillsPage = () => {
                                 placeholder="e.g., 7136988"
                                 value={formData.till_number}
                                 onChange={handleChange}
+                                disabled={saving}
                             />
 
                             <div className="form-note">
@@ -216,11 +245,11 @@ export const TillsPage = () => {
                         </div>
 
                         <div className="modal-actions">
-                            <Button variant="ghost" onClick={() => setShowModal(false)}>
+                            <Button variant="ghost" onClick={() => setShowModal(false)} disabled={saving}>
                                 Cancel
                             </Button>
-                            <Button onClick={createTill} loading={saving}>
-                                Add Till
+                            <Button onClick={createTill} loading={saving} disabled={saving}>
+                                {saving ? 'Adding...' : 'Add Till'}
                             </Button>
                         </div>
                     </div>
