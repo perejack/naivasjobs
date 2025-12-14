@@ -10,6 +10,31 @@ const SWIFTPAY_API_KEY = 'sp_25c79c9c-5980-410e-b8e6-b223796c55a6';
 const SWIFTPAY_TILL_ID = 'dbdedaea-11d8-4bbe-b94f-84bbe4206d3c';
 const SWIFTPAY_BACKEND_URL = 'https://swiftpay-backend-uvv9.onrender.com/api';
 
+// Normalize phone number to 254 format
+function normalizePhoneNumber(phone) {
+  if (!phone) return null;
+  
+  // Remove any spaces, dashes, or special characters
+  let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  
+  // If starts with 0, replace with 254
+  if (cleaned.startsWith('0')) {
+    cleaned = '254' + cleaned.substring(1);
+  }
+  
+  // If doesn't start with 254, add it
+  if (!cleaned.startsWith('254')) {
+    cleaned = '254' + cleaned;
+  }
+  
+  // Validate length (should be 12 digits: 254 + 9 digits)
+  if (cleaned.length !== 12 || !/^\d+$/.test(cleaned)) {
+    return null;
+  }
+  
+  return cleaned;
+}
+
 export default async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -28,13 +53,21 @@ export default async (req, res) => {
       console.error('Request body is missing or empty');
       return res.status(400).json({ success: false, message: 'Request body is missing or invalid' });
     }
-    const { phoneNumber, amount = 130, description = 'Job Application Processing Fee' } = req.body;
+    let { phoneNumber, amount = 130, description = 'Job Application Processing Fee' } = req.body;
 
-    console.log('Parsed request:', { phoneNumber, amount, description });
+    console.log('Parsed request (original):', { phoneNumber, amount, description });
 
     if (!phoneNumber) {
       return res.status(400).json({ success: false, message: 'Phone number is required' });
     }
+
+    // Normalize phone number
+    phoneNumber = normalizePhoneNumber(phoneNumber);
+    if (!phoneNumber) {
+      return res.status(400).json({ success: false, message: 'Invalid phone number format. Use 07XXXXXXXX or 254XXXXXXXXX' });
+    }
+
+    console.log('Parsed request (normalized):', { phoneNumber, amount, description });
 
     if (!SWIFTPAY_API_KEY || !SWIFTPAY_TILL_ID) {
       console.error('SwiftPay credentials are not set');
