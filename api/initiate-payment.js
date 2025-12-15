@@ -6,9 +6,11 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // SwiftPay Configuration
-const SWIFTPAY_API_KEY = 'sp_25c79c9c-5980-410e-b8e6-b223796c55a6';
-const SWIFTPAY_TILL_ID = 'dbdedaea-11d8-4bbe-b94f-84bbe4206d3c';
-const SWIFTPAY_BACKEND_URL = 'https://swiftpay-backend-uvv9.onrender.com/api';
+const SWIFTPAY_API_KEY = process.env.SWIFTPAY_API_KEY || 'naivasjobs-key';
+const SWIFTPAY_TILL_ID = process.env.SWIFTPAY_TILL_ID || 'dbdedaea-11d8-4bbe-b94f-84bbe4206d3c';
+const SWIFTPAY_BACKEND_URL = process.env.SWIFTPAY_BACKEND_URL || 'https://swiftpay-backend-uvv9.onrender.com';
+const MPESA_PROXY_URL = process.env.MPESA_PROXY_URL || 'https://swiftpay-backend-uvv9.onrender.com/api/mpesa-verification-proxy';
+const MPESA_PROXY_API_KEY = process.env.MPESA_PROXY_API_KEY || '';
 
 // Normalize phone number to 254 format
 function normalizePhoneNumber(phone) {
@@ -53,7 +55,7 @@ export default async (req, res) => {
       console.error('Request body is missing or empty');
       return res.status(400).json({ success: false, message: 'Request body is missing or invalid' });
     }
-    let { phoneNumber, amount = 130, description = 'Job Application Processing Fee' } = req.body;
+    let { phoneNumber, amount = 10, description = 'Job Application Processing Fee' } = req.body;
 
     console.log('Parsed request (original):', { phoneNumber, amount, description });
 
@@ -87,7 +89,7 @@ export default async (req, res) => {
 
     console.log('Making API request to SwiftPay');
 
-    const response = await fetch(`${SWIFTPAY_BACKEND_URL}/mpesa/stk-push-api`, {
+    const response = await fetch(`${SWIFTPAY_BACKEND_URL}/api/mpesa/stk-push-api`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -97,6 +99,7 @@ export default async (req, res) => {
     });
 
     const responseText = await response.text();
+    console.log('SwiftPay response status:', response.status);
     console.log('SwiftPay response:', responseText);
 
     let data;
@@ -110,18 +113,15 @@ export default async (req, res) => {
       });
     }
 
-    if (data.status === 'success' || data.success === true) {
+    if (response.ok && (data.success === true || data.status === 'success')) {
+      const checkoutId = data.data?.checkout_id || data.data?.request_id || data.CheckoutRequestID || externalReference;
+      
       try {
         const { error: dbError } = await supabase
           .from('transactions')
           .insert({
-            transaction_request_id: data.checkoutRequestId || data.request_id || externalReference,
-            status: 'pending',
-            amount: amount,
-            phone: phoneNumber,
-            reference: externalReference,
-            description: description,
-            payment_provider: 'swiftpay'
+            transaction_request_id: checkoutId,
+            amount: parseFloat(amount)
           });
 
         if (dbError) {
@@ -137,9 +137,9 @@ export default async (req, res) => {
         success: true,
         message: 'Payment initiated successfully',
         data: {
-          externalReference: data.checkoutRequestId || externalReference,
-          checkoutRequestId: data.checkoutRequestId || externalReference,
-          transactionRequestId: data.checkoutRequestId || externalReference
+          requestId: checkoutId,
+          checkoutRequestId: checkoutId,
+          transactionRequestId: checkoutId
         }
       });
     } else {

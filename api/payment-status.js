@@ -5,6 +5,40 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// SwiftPay M-Pesa Verification Proxy
+const MPESA_PROXY_URL = process.env.MPESA_PROXY_URL || 'https://swiftpay-backend-uvv9.onrender.com/api/mpesa-verification-proxy';
+const MPESA_PROXY_API_KEY = process.env.MPESA_PROXY_API_KEY || '';
+
+// Query M-Pesa payment status via SwiftPay proxy
+async function queryMpesaPaymentStatus(checkoutId) {
+  try {
+    console.log(`Querying M-Pesa status for ${checkoutId} via proxy`);
+    
+    const response = await fetch(MPESA_PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        checkoutId: checkoutId,
+        apiKey: MPESA_PROXY_API_KEY
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Proxy response status:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log('Proxy response:', JSON.stringify(data, null, 2));
+    return data;
+  } catch (error) {
+    console.error('Error querying M-Pesa via proxy:', error.message);
+    return null;
+  }
+}
+
 export default async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -53,6 +87,40 @@ export default async (req, res) => {
         paymentStatus = 'SUCCESS';
       } else if (transaction.status === 'failed' || transaction.status === 'cancelled') {
         paymentStatus = 'FAILED';
+      }
+      
+      // If status is still pending, query M-Pesa via SwiftPay proxy
+      if (paymentStatus === 'PENDING') {
+        console.log(`Status is pending, querying M-Pesa via proxy for ${transaction.transaction_request_id}`);
+        try {
+          const proxyResponse = await queryMpesaPaymentStatus(transaction.transaction_request_id);
+          
+          if (proxyResponse && proxyResponse.success && proxyResponse.payment.status === 'success') {
+            console.log(`Proxy confirmed payment success for ${transaction.transaction_request_id}, updating database`);
+            
+            // Update transaction to success
+            const { data: updatedTransaction, error: updateError } = await supabase
+              .from('transactions')
+              .update({
+                status: 'success'
+              })
+              .eq('id', transaction.id)
+              .select();
+            
+            if (!updateError && updatedTransaction && updatedTransaction.length > 0) {
+              paymentStatus = 'SUCCESS';
+              console.log(`Transaction ${transaction.transaction_request_id} updated to success:`, updatedTransaction[0]);
+            } else if (updateError) {
+              console.error('Error updating transaction:', updateError);
+            }
+          } else if (proxyResponse && proxyResponse.payment.status === 'failed') {
+            paymentStatus = 'FAILED';
+            console.log(`Proxy confirmed payment failed for ${transaction.transaction_request_id}`);
+          }
+        } catch (proxyError) {
+          console.error('Error querying M-Pesa via proxy:', proxyError);
+          // Continue with local status if proxy query fails
+        }
       }
       
       return res.status(200).json({
