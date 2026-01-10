@@ -43,7 +43,7 @@ export function AboutNaivas() {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-b from-background to-secondary/5">
+    <section id="about-naivas" className="py-20 bg-gradient-to-b from-background to-secondary/5">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <Badge className="bg-secondary/10 text-secondary border-secondary/20 mb-4">

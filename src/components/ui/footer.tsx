@@ -87,7 +87,7 @@ export function Footer() {
               </li>
               <li>
                 <a 
-                  href="#about" 
+                  href="#about-naivas" 
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   About Naivas
