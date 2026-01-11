@@ -4,7 +4,11 @@ import path from "node:path";
 const DEFAULT_BASE_URL = "https://www.naivasjobs.site";
 
 const resolveBaseUrl = () => {
-  const raw = process.env.SITE_URL || process.env.PUBLIC_SITE_URL || process.env.VERCEL_URL || DEFAULT_BASE_URL;
+  const explicit = process.env.SITE_URL || process.env.PUBLIC_SITE_URL;
+  const vercelEnv = (process.env.VERCEL_ENV || "").toLowerCase();
+  const isPreview = vercelEnv === "preview" || vercelEnv === "development";
+
+  const raw = explicit || (isPreview ? process.env.VERCEL_URL : undefined) || DEFAULT_BASE_URL;
   const withScheme = raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
   return withScheme.replace(/\/+$/, "");
 };
