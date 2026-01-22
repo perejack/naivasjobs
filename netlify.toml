@@ -1,0 +1,121 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["netlify/functions/**"]
+  external_node_modules = ["axios"]
+
+[dev]
+  command = "npm run dev"
+
+# Security headers for all pages
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+  
+[build.environment]
+  # These values will be replaced with real Paystack API keys in the Netlify dashboard
+  PAYSTACK_PUBLIC_KEY = "YOUR_PAYSTACK_PUBLIC_KEY"
+  PAYSTACK_SECRET_KEY = "YOUR_PAYSTACK_SECRET_KEY"
+
+[[redirects]]
+  from = "/.netlify/functions/get-token"
+  to = "/.netlify/functions/get-token"
+  status = 200
+  force = true
+  methods = ["GET", "POST", "OPTIONS"]
+  [redirects.headers]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET,POST,OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+[[redirects]]
+  from = "/.netlify/functions/submit-order"
+  to = "/.netlify/functions/submit-order"
+  status = 200
+  force = true
+  methods = ["GET", "POST", "OPTIONS"]
+  [redirects.headers]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET,POST,OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+[[redirects]]
+  from = "/.netlify/functions/ipn"
+  to = "/.netlify/functions/ipn"
+  status = 200
+  force = true
+  methods = ["GET", "POST", "OPTIONS"]
+  [redirects.headers]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET,POST,OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+[[redirects]]
+  from = "/.netlify/functions/paystack-initialize"
+  to = "/.netlify/functions/paystack-initialize"
+  status = 200
+  force = true
+  methods = ["GET", "POST", "OPTIONS"]
+  [redirects.headers]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET,POST,OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+[[redirects]]
+  from = "/.netlify/functions/paystack-verify/*"
+  to = "/.netlify/functions/paystack-verify/:splat"
+  status = 200
+  force = true
+  methods = ["GET", "POST", "OPTIONS"]
+  [redirects.headers]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET,POST,OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+[[redirects]]
+  from = "/.netlify/functions/paystack-publickey"
+  to = "/.netlify/functions/paystack-publickey"
+  status = 200
+  force = true
+  methods = ["GET", "OPTIONS"]
+  [redirects.headers]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET,OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+[[redirects]]
+  from = "/.netlify/functions/mpesa-check-status"
+  to = "/.netlify/functions/mpesa-check-status"
+  status = 200
+  force = true
+  methods = ["GET", "POST", "OPTIONS"]
+  [redirects.headers]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET,POST,OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+[[redirects]]
+  from = "/.netlify/functions/mpesa-withdraw"
+  to = "/.netlify/functions/mpesa-withdraw"
+  status = 200
+  force = true
+  methods = ["GET", "POST", "OPTIONS"]
+  [redirects.headers]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET,POST,OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

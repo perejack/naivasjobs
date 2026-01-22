@@ -1,0 +1,4 @@
+Contact: security@yourdomain.com
+Preferred-Languages: en
+Canonical: https://yourdomain.com/.well-known/security.txt
+Policy: https://yourdomain.com/security-policy

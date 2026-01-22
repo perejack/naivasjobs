@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /payment/
+Disallow: /dashboard/
+Disallow: /FRANKLOAN-master/
+Disallow: /paymentmodal/
+Disallow: /PAYMENT/
+Disallow: /apply
+Disallow: /account
+
+# Sitemap
+Sitemap: https://www.mkoposwiftloan.site/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 1
