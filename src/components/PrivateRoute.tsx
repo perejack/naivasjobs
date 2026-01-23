@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
+  const { setShowAuthModal } = useAuth();
 
   useEffect(() => {
     checkUser();
@@ -21,6 +23,12 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      setShowAuthModal(true);
+    }
+  }, [loading, user, setShowAuthModal]);
 
   const checkUser = async () => {
     try {

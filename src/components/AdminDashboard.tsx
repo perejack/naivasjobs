@@ -35,6 +35,8 @@ const AdminDashboard: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [rows, setRows] = useState<AdminLoanRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentIsAdminFlag, setCurrentIsAdminFlag] = useState<boolean | null>(null);
 
   const bucketName = 'loan-documents';
 
@@ -49,6 +51,8 @@ const AdminDashboard: React.FC = () => {
         return;
       }
 
+      setCurrentUserId(user.id);
+
       const { data: adminProfile, error: adminProfileError } = await supabase
         .from('user_profiles')
         .select('is_admin')
@@ -56,6 +60,8 @@ const AdminDashboard: React.FC = () => {
         .single();
 
       if (adminProfileError) throw adminProfileError;
+
+      setCurrentIsAdminFlag(Boolean(adminProfile?.is_admin));
 
       if (!adminProfile?.is_admin) {
         setIsAdmin(false);
@@ -132,7 +138,18 @@ const AdminDashboard: React.FC = () => {
             <ShieldAlert className="w-6 h-6 text-green-600" />
             <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           </div>
-          <p className="text-gray-600">You do not have access to this page.</p>
+          {error && <p className="text-red-600 mb-3">{error}</p>}
+          <p className="text-gray-600 mb-4">You do not have access to this page.</p>
+          <div className="text-sm text-gray-600 space-y-1">
+            <div><strong>Logged in user id:</strong> {currentUserId || 'Unknown'}</div>
+            <div><strong>is_admin:</strong> {currentIsAdminFlag === null ? 'Unknown' : String(currentIsAdminFlag)}</div>
+          </div>
+          <button
+            onClick={() => void load()}
+            className="mt-6 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+          >
+            Re-check Access
+          </button>
         </div>
       </div>
     );
