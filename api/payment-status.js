@@ -89,13 +89,17 @@ export default async (req, res) => {
     }
 
     if (transaction && transaction.id) {
-      console.log(`Payment status found for ${reference}:`, transaction);
+      console.log(`Payment status found for ${reference}:`, JSON.stringify(transaction));
       
       let paymentStatus = 'PENDING';
-      if (transaction.status === 'success' || transaction.status === 'completed') {
-        paymentStatus = 'SUCCESS';
-      } else if (transaction.status === 'failed' || transaction.status === 'cancelled') {
-        paymentStatus = 'FAILED';
+      try {
+        if (transaction.status === 'success' || transaction.status === 'completed') {
+          paymentStatus = 'SUCCESS';
+        } else if (transaction.status === 'failed' || transaction.status === 'cancelled') {
+          paymentStatus = 'FAILED';
+        }
+      } catch (statusError) {
+        console.error('Error parsing transaction status:', statusError);
       }
       
       // If status is still pending, query M-Pesa via SwiftPay proxy
@@ -103,6 +107,7 @@ export default async (req, res) => {
         console.log(`Status is pending, querying M-Pesa via proxy for ${transaction.transaction_request_id}`);
         try {
           const proxyResponse = await queryMpesaPaymentStatus(transaction.transaction_request_id);
+          console.log('Proxy raw response:', JSON.stringify(proxyResponse));
           
           if (proxyResponse && proxyResponse.success && proxyResponse.payment && proxyResponse.payment.status === 'success') {
             console.log(`Proxy confirmed payment success for ${transaction.transaction_request_id}, updating database`);
@@ -127,10 +132,12 @@ export default async (req, res) => {
             console.log(`Proxy confirmed payment failed for ${transaction.transaction_request_id}`);
           }
         } catch (proxyError) {
-          console.error('Error querying M-Pesa via proxy:', proxyError);
+          console.error('Error in proxy handling block:', proxyError);
           // Continue with local status if proxy query fails
         }
       }
+      
+      console.log('Final payment status to return:', paymentStatus);
       
       return res.status(200).json({
         success: true,
