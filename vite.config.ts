@@ -7,6 +7,12 @@ export default defineConfig(() => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/api': {
+        target: 'https://www.applicationskenya.site',
+        changeOrigin: true,
+      }
+    }
   },
   plugins: [
     react(),
