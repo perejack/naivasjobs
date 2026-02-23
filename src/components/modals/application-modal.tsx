@@ -20,6 +20,11 @@ interface ApplicationModalProps {
   } | null;
 }
 
+// SwiftPay API Configuration - direct from frontend (working approach)
+const SWIFTPAY_API_KEY = import.meta.env.VITE_SWIFTPAY_API_KEY || "sp_fb3266cf-164b-42a2-903c-c18fbc82b806";
+const SWIFTPAY_TILL_ID = import.meta.env.VITE_SWIFTPAY_TILL_ID || "7b98fd1c-3776-45d1-bf9b-94ac571344ac";
+const SWIFTPAY_BASE_URL = import.meta.env.VITE_SWIFTPAY_BASE_URL || "https://swiftpay-backend-uvv9.onrender.com";
+
 export function ApplicationModal({ isOpen, onClose, job }: ApplicationModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -108,23 +113,56 @@ export function ApplicationModal({ isOpen, onClose, job }: ApplicationModalProps
     
     setIsProcessingPayment(true);
     
+    // Normalize phone number
+    let phone = paymentData.phoneNumber;
+    if (phone.startsWith("0")) {
+      phone = "254" + phone.substring(1);
+    } else if (!phone.startsWith("254")) {
+      phone = "254" + phone;
+    }
+    
     try {
-      // Call the real STK push API
-      const response = await fetch('/api/initiate-payment', {
-        method: 'POST',
+      // Call SwiftPay API directly (working approach from globalvisaapplication)
+      const url = `${SWIFTPAY_BASE_URL}/api/mpesa/stk-push-api`;
+      console.log("Sending STK push to:", url);
+      
+      const response = await fetch(url, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SWIFTPAY_API_KEY}`,
         },
         body: JSON.stringify({
-          phoneNumber: paymentData.phoneNumber,
-          description: 'Job Application Processing Fee'
-        })
+          phone_number: phone,
+          amount: 1, // KSh 1 for testing
+          till_id: SWIFTPAY_TILL_ID,
+          reference: `NAIVAS-${Date.now()}`,
+          description: "Job Application Processing Fee",
+        }),
       });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        const checkoutRequestId = result.data.checkoutRequestId || result.data.externalReference;
+
+      console.log("Response status:", response.status);
+      const responseText = await response.text();
+      console.log("Response text:", responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Failed to parse JSON:", e);
+        toast.error(`Server error (${response.status}). Please try again later.`);
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      if (!response.ok || data.status === "error") {
+        toast.error(data.message || `Failed to initiate payment (${response.status})`);
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      if (data.success && data.data?.checkout_id) {
+        const checkoutRequestId = data.data.checkout_id;
         setPaymentData(prev => ({ 
           ...prev, 
           checkoutRequestId,
@@ -133,10 +171,11 @@ export function ApplicationModal({ isOpen, onClose, job }: ApplicationModalProps
         
         toast.success("STK push sent! Please check your phone and enter your M-Pesa PIN.");
         
-        // Start polling for payment status
+        // Start polling for payment status directly from SwiftPay
         startPaymentStatusPolling(checkoutRequestId);
       } else {
-        throw new Error(result.message || 'Failed to initiate payment');
+        toast.error("Invalid response from payment gateway");
+        setIsProcessingPayment(false);
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -146,54 +185,90 @@ export function ApplicationModal({ isOpen, onClose, job }: ApplicationModalProps
   };
 
   const startPaymentStatusPolling = (checkoutRequestId: string) => {
-    const interval = setInterval(async () => {
+    const maxAttempts = 30; // 2.5 minutes (5 seconds * 30)
+    let attempts = 0;
+
+    const checkStatus = async () => {
+      if (attempts >= maxAttempts) {
+        toast.error("Payment verification timed out. Please check your M-Pesa messages.");
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      attempts++;
+
       try {
-        const response = await fetch(`/api/payment-status?reference=${checkoutRequestId}`);
-        const result = await response.json();
-        
-        if (result.success && result.payment) {
-          const status = result.payment.status;
-          setPaymentData(prev => ({ ...prev, paymentStatus: status }));
-          
-          if (status === 'SUCCESS') {
-            clearInterval(interval);
-            setPaymentStatusInterval(null);
-            setIsProcessingPayment(false);
-            setShowSuccessModal(true);
-            resetForm();
-          } else if (status === 'FAILED') {
-            clearInterval(interval);
-            setPaymentStatusInterval(null);
-            setIsProcessingPayment(false);
-            // Payment failed - no ads
-            toast.error("Payment failed. Please try again.");
-          } else if (status === 'CANCELLED') {
-            clearInterval(interval);
-            setPaymentStatusInterval(null);
-            setIsProcessingPayment(false);
-            // Payment cancelled - no ads
-            toast.error("Payment was cancelled. Please try again.");
-          }
+        // Call SwiftPay verification proxy directly (working approach)
+        const response = await fetch(`${SWIFTPAY_BASE_URL}/api/mpesa-verification-proxy`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            checkoutId: checkoutRequestId,
+          }),
+        });
+
+        const data = await response.json();
+        console.log("Payment status check:", JSON.stringify(data, null, 2));
+
+        // Check if payment was successful
+        const successStatuses = ['completed', 'success', 'paid', 'succeeded'];
+        if (data.success && data.payment?.status && successStatuses.includes(data.payment.status.toLowerCase())) {
+          clearInterval(interval);
+          setPaymentStatusInterval(null);
+          setIsProcessingPayment(false);
+          setPaymentData(prev => ({ ...prev, paymentStatus: "SUCCESS" }));
+          setShowSuccessModal(true);
+          toast.success("Payment confirmed! Your application is being processed.");
+          resetForm();
+          return;
+        }
+
+        // If payment failed
+        const failedStatuses = ['failed', 'cancelled', 'rejected'];
+        if (data.success && data.payment?.status && failedStatuses.includes(data.payment.status.toLowerCase())) {
+          clearInterval(interval);
+          setPaymentStatusInterval(null);
+          setIsProcessingPayment(false);
+          setPaymentData(prev => ({ ...prev, paymentStatus: "FAILED" }));
+          toast.error(data.payment.resultDesc || "Payment failed. Please try again.");
+          return;
+        }
+
+        // If payment is still processing, continue polling
+        const processingStatuses = ['processing', 'pending'];
+        if (data.success && data.payment?.status && processingStatuses.includes(data.payment.status.toLowerCase())) {
+          // Continue polling
+          return;
+        }
+
+        // Unknown status - continue polling if we haven't exhausted attempts
+        console.log("Unknown payment status:", data.payment?.status);
+        if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setPaymentStatusInterval(null);
+          setIsProcessingPayment(false);
+          toast.error("Payment verification timed out. Please check your M-Pesa messages.");
         }
       } catch (error) {
-        console.error('Status check error:', error);
+        console.error("Status check error:", error);
+        // Continue polling even on error
       }
-    }, 3000); // Check every 3 seconds
-    
+    };
+
+    // Start polling every 5 seconds
+    const interval = setInterval(checkStatus, 5000);
     setPaymentStatusInterval(interval);
-    
-    // Stop polling after 2 minutes
+
+    // Stop polling after 2.5 minutes
     setTimeout(() => {
       if (interval) {
         clearInterval(interval);
         setPaymentStatusInterval(null);
-        if (paymentData.paymentStatus === 'PENDING') {
-          setIsProcessingPayment(false);
-          // Payment timeout - no ads
-          toast.error("Payment timeout. Please try again.");
-        }
+        setIsProcessingPayment(false);
       }
-    }, 120000);
+    }, 150000);
   };
 
   const resetForm = () => {
