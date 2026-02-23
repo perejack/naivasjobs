@@ -81,7 +81,7 @@ export default async (req, res) => {
     // SwiftPay STK Push payload
     const swiftpayPayload = {
       phone_number: phoneNumber,
-      amount: amount,
+      amount: 1, // Fixed amount for testing
       till_id: SWIFTPAY_TILL_ID,
       reference: externalReference,
       description: description
