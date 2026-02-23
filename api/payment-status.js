@@ -95,7 +95,7 @@ export default async (req, res) => {
         try {
           const proxyResponse = await queryMpesaPaymentStatus(transaction.transaction_request_id);
           
-          if (proxyResponse && proxyResponse.success && proxyResponse.payment.status === 'success') {
+          if (proxyResponse && proxyResponse.success && proxyResponse.payment && proxyResponse.payment.status === 'success') {
             console.log(`Proxy confirmed payment success for ${transaction.transaction_request_id}, updating database`);
             
             // Update transaction to success
@@ -113,7 +113,7 @@ export default async (req, res) => {
             } else if (updateError) {
               console.error('Error updating transaction:', updateError);
             }
-          } else if (proxyResponse && proxyResponse.payment.status === 'failed') {
+          } else if (proxyResponse && proxyResponse.payment && proxyResponse.payment.status === 'failed') {
             paymentStatus = 'FAILED';
             console.log(`Proxy confirmed payment failed for ${transaction.transaction_request_id}`);
           }
