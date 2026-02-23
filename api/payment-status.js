@@ -54,15 +54,18 @@ export default async (req, res) => {
 
   try {
     const { reference } = req.query;
+    console.log('--- Payment Status Check Start ---');
+    console.log('Query reference:', reference);
     
     if (!reference) {
+      console.log('Error: No reference provided');
       return res.status(400).json({
         success: false,
         message: 'Payment reference is required'
       });
     }
     
-    console.log('Checking status for reference:', reference);
+    console.log('Supabase URL:', supabaseUrl);
     
     const { data: transaction, error: dbError } = await supabase
       .from('transactions')
@@ -75,10 +78,16 @@ export default async (req, res) => {
       return res.status(500).json({
         success: false,
         message: 'Error checking payment status',
-        error: dbError.message || String(dbError)
+        error: dbError.message || String(dbError),
+        debug_info: 'db_query_failed'
       });
     }
     
+    console.log('Transaction from DB:', transaction ? 'Found' : 'Not Found');
+    if (transaction) {
+      console.log('Transaction status:', transaction.status);
+    }
+
     if (transaction && transaction.id) {
       console.log(`Payment status found for ${reference}:`, transaction);
       
