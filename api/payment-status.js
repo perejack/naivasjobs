@@ -164,12 +164,14 @@ export default async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Payment status check error:', error);
+    console.error('CRITICAL Payment status check error:', error);
     
     return res.status(500).json({
       success: false,
       message: 'Failed to check payment status',
-      error: error.message || String(error)
+      error: error.message || String(error),
+      stack: error.stack,
+      debug_step: 'global_catch'
     });
   }
 };
