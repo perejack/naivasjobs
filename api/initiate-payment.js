@@ -6,8 +6,8 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsIn
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // SwiftPay Configuration
-const SWIFTPAY_API_KEY = process.env.SWIFTPAY_API_KEY;
-const SWIFTPAY_TILL_ID = process.env.SWIFTPAY_TILL_ID;
+const SWIFTPAY_API_KEY = process.env.SWIFTPAY_API_KEY || 'sp_fb3266cf-164b-42a2-903c-c18fbc82b806';
+const SWIFTPAY_TILL_ID = process.env.SWIFTPAY_TILL_ID || '7b98fd1c-3776-45d1-bf9b-94ac571344ac';
 const SWIFTPAY_BACKEND_URL = process.env.SWIFTPAY_BACKEND_URL || 'https://swiftpay-backend-uvv9.onrender.com';
 const MPESA_PROXY_URL = process.env.MPESA_PROXY_URL || 'https://swiftpay-backend-uvv9.onrender.com/api/mpesa-verification-proxy';
 const MPESA_PROXY_API_KEY = process.env.MPESA_PROXY_API_KEY || '';
