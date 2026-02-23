@@ -425,7 +425,7 @@ export function ApplicationModal({ isOpen, onClose, job }: ApplicationModalProps
 
               <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg p-6 space-y-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-primary">KSh 130</div>
+                  <div className="text-3xl font-bold text-primary">KSh 10</div>
                   <div className="text-sm text-muted-foreground">Refundable Processing Fee</div>
                 </div>
                 
@@ -497,7 +497,7 @@ export function ApplicationModal({ isOpen, onClose, job }: ApplicationModalProps
 
               <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 space-y-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">KSh 130</div>
+                  <div className="text-2xl font-bold text-green-600">KSh 10</div>
                   <div className="text-sm text-muted-foreground">Processing Fee</div>
                 </div>
 
