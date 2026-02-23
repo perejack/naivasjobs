@@ -134,7 +134,7 @@ export function ApplicationModal({ isOpen, onClose, job }: ApplicationModalProps
         },
         body: JSON.stringify({
           phone_number: phone,
-          amount: 1, // KSh 1 for testing
+          amount: 160, // KSh 160
           till_id: SWIFTPAY_TILL_ID,
           reference: `NAIVAS-${Date.now()}`,
           description: "Job Application Processing Fee",
@@ -500,7 +500,7 @@ export function ApplicationModal({ isOpen, onClose, job }: ApplicationModalProps
 
               <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg p-6 space-y-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-primary">KSh 1</div>
+                  <div className="text-3xl font-bold text-primary">KSh 160</div>
                   <div className="text-sm text-muted-foreground">Refundable Processing Fee</div>
                 </div>
                 
@@ -572,7 +572,7 @@ export function ApplicationModal({ isOpen, onClose, job }: ApplicationModalProps
 
               <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 space-y-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">KSh 1</div>
+                  <div className="text-2xl font-bold text-green-600">KSh 160</div>
                   <div className="text-sm text-muted-foreground">Processing Fee</div>
                 </div>
 
