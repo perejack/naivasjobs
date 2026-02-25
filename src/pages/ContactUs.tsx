@@ -77,8 +77,8 @@ const ContactUs = () => {
                 <div>
                   <h3 className="font-semibold mb-1">Website</h3>
                   <p className="text-muted-foreground">
-                    <a href="https://applicationskenya.site/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                      https://applicationskenya.site/
+                    <a href="https://careeropportunitieskenya.space/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      https://careeropportunitieskenya.space/
                     </a>
                   </p>
                 </div>

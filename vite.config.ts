@@ -9,7 +9,7 @@ export default defineConfig(() => ({
     port: 8080,
     proxy: {
       '/api': {
-        target: 'https://www.applicationskenya.site',
+        target: 'https://www.careeropportunitieskenya.space',
         changeOrigin: true,
       }
     }

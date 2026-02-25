@@ -133,7 +133,7 @@ const PrivacyPolicy = () => {
                 <p><strong>Business Name:</strong> Kenya Applications Portal</p>
                 <p><strong>Email:</strong> emmanuelkiprotich.dr@gmail.com</p>
                 <p><strong>Address:</strong> P.O. Box 34567-00100, Nairobi, Kenya</p>
-                <p><strong>Website:</strong> https://applicationskenya.site/</p>
+                <p><strong>Website:</strong> https://careeropportunitieskenya.space/</p>
               </div>
             </section>
           </div>

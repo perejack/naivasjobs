@@ -25,8 +25,8 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Globe className="h-4 w-4" />
-                <a href="https://applicationskenya.site/" target="_blank" rel="noopener noreferrer" className="hover:text-primary">
-                  applicationskenya.site
+                <a href="https://careeropportunitieskenya.space/" target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                  careeropportunitieskenya.space
                 </a>
               </div>
             </div>

@@ -73,7 +73,7 @@ const AboutUs = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Website</p>
-                    <p className="font-semibold">https://applicationskenya.site/</p>
+                    <p className="font-semibold">https://careeropportunitieskenya.space/</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Operating Since</p>
@@ -181,8 +181,8 @@ const AboutUs = () => {
                 <div className="flex items-center gap-3">
                   <Globe className="h-4 w-4 text-primary" />
                   <span className="text-muted-foreground">Website: </span>
-                  <a href="https://applicationskenya.site/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    https://applicationskenya.site/
+                  <a href="https://careeropportunitieskenya.space/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    https://careeropportunitieskenya.space/
                   </a>
                 </div>
                 <div className="flex items-center gap-3">

@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://www.naivasjobs.site/sitemap-index.xml
+Sitemap: https://www.careeropportunitieskenya.space/sitemap.xml
