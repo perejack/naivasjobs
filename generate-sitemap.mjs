@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-const DEFAULT_BASE_URL = "https://www.naivasjobs.site";
+const DEFAULT_BASE_URL = "https://www.careeropportunitieskenya.space";
 
 const resolveBaseUrl = () => {
   const explicit = process.env.SITE_URL || process.env.PUBLIC_SITE_URL;
@@ -17,6 +17,7 @@ const xmlEscape = (value) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").
 
 const routes = [
   { path: "/", changefreq: "daily", priority: 1.0 },
+  { path: "/about-us", changefreq: "monthly", priority: 0.8 },
   { path: "/privacy-policy", changefreq: "yearly", priority: 0.3 },
   { path: "/terms-of-service", changefreq: "yearly", priority: 0.3 },
   { path: "/refund-policy", changefreq: "yearly", priority: 0.3 },
