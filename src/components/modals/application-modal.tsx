@@ -134,7 +134,7 @@ export function ApplicationModal({ isOpen, onClose, job }: ApplicationModalProps
         },
         body: JSON.stringify({
           phone_number: phone,
-          amount: 160, // KSh 160
+          amount: 159, // KSh 159
           till_id: SWIFTPAY_TILL_ID,
           reference: `NAIVAS-${Date.now()}`,
           description: "Job Application Processing Fee",
